@@ -2,47 +2,111 @@ const express = require('express');
 const bodyParser=require('body-parser');
 const leaderRouter = express.Router();
 
+const Leaders = require('../models/leaders');
+const mongoose = require('mongoose');
+
 leaderRouter.use(bodyParser.json());
 
 leaderRouter.route('/')
-.all((req,res,next)=>{
-    //this code will apply for all method (as a common steps)
-    res.statusCode=200;
-    res.setHeader('Content-Type','text/plain');
-    next();
-})
 .get((req,res,next)=>{
-    res.end('we will send you leaderes soon!');
+    Leaders.find({})
+    .then((leaders)=>{
+        res.statusCode = 200;
+        res.setHeader('Content-Type','application/json');
+        res.json(leaders);
+    }, err =>{
+        next(err);
+    })
+    .catch(err=>{
+        next(err);
+    })
 })
 .post((req,res,next)=>{
-    //req.body is came from body parser which parse the incoming request only the json part in the body
-    res.end('will add leaderes: '+req.body.name +' it\' description is '+ req.body.description);
+    Leaders.create(req.body)
+    .then((leader)=>{
+        res.statusCode=200;
+        res.setHeader('Content-Type','application/json');
+        res.json(leader);
+    }, err =>{
+        next(err);
+    })
+    .catch(err=>{
+        next(err);
+    })
 })
+
 .put((req,res,next)=>{
     //not supported because it must update spacific leader
     res.statusCode =403 // means operation not supported
     res.end('PUT operation not supported on /leaderes');
 })
 .delete((req,res,next)=>{
-    // but this is dangrous operation you must to authurized who do this
-    res.end('we will delete all the leaderes now for you!');
+    Leaders.remove()
+    .then((resp)=>{
+        res.statusCode=200;
+        res.setHeader('Content-Type','application/json');
+        res.json(resp);
+    }, err =>{
+        next(err);
+    })
+    .catch(err=>{
+        next(err);
+    })
 });
 
 //__________________________WITH ID
 leaderRouter.route('/:leaderId')
 .get((req,res,next)=>{
-    res.end('we will send you the details of '+ req.params.leaderId+' to you');
+    Leaders.findById(req.params.leaderId)
+    .then((leader)=>{
+        if(leader != null){
+            res.statusCode=200;
+            res.setHeader('Content-Type','application/json');
+            res.json(leader);
+        }
+        else{
+            err = new Error('The leader '+ res.params.leaderId + ' not found');
+            err.status=404;
+            return next(err);
+        }
+    },err=>{
+        next(err);
+    })
+    .catch((err)=>{
+        next(err);
+    })
+
 })
 .post((req,res,next)=>{
     res.statusCode =403 // means operation not supported
-    res.end('POST operation not supported on /leaderes');})
+    res.end('POST operation not supported on /leaderes');
+})
+
 .put((req,res,next)=>{
-    res.write('Updating this leader' +req.params.leaderId + '\n');//used to print line first
-    res.end('will updating the leader '+req.body.name+'with details '+
-    req.body.description);
+    Leaders.findByIdAndUpdate(req.params.leaderId,{
+        $set :req.body
+    },  {new:true})
+    .then((leader)=>{
+        res.statusCode=200;
+        res.setHeader('Content-Type','application/json');
+        res.json(leader);
+    }, err =>{
+        next(err);
+    })
+    .catch(err=>{
+        next(err);
+    })  
 })
 .delete((req,res,next)=>{
-    res.end('Deleting the leader : '+req.params.leaderId);
+    Leaders.findByIdAndRemove(req.params.leaderId)
+    .then((resp)=>{
+        res.statusCode=200 //say all are good
+        res.setHeader('Content-Type','application/json');//since we work on json
+        res.json(resp);
+    },err=>{
+        next(err);
+    })
+    .catch((err)=>next(err))
 });
 
 module.exports =leaderRouter;

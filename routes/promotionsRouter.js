@@ -1,22 +1,38 @@
 const express = require('express');
 const bodyParser=require('body-parser');
 const promotionRouter = express.Router();
+const mongoose=require('mongoose');
+const Promotions=require('../models/promotions');
 
 promotionRouter.use(bodyParser.json());
 
 promotionRouter.route('/')
-.all((req,res,next)=>{
-    //this code will apply for all method (as a common steps)
-    res.statusCode=200;
-    res.setHeader('Content-Type','text/plain');
-    next();
-})
 .get((req,res,next)=>{
-    res.end('we will send you promotions soon!');
+    Promotions.find({})
+    .then((promotions)=>
+    {
+        res.statusCode=200;
+        res.setHeader('Content-Type','applications/json');
+        res.json(promotions);
+    },err=>{
+        next(err);
+    })
+    .catch((err)=>{
+        next(err);
+    })
 })
 .post((req,res,next)=>{
-    //req.body is came from body parser which parse the incoming request only the json part in the body
-    res.end('will add promotions: '+req.body.name +' it\' description is '+ req.body.description);
+    Promotions.create(req.body)
+    .then((promo)=>{
+        res.statusCode=200;
+        res.setHeader('Content-Type','applications/json');
+        res.json(promo);
+    },err=>{
+        next(err);
+    })
+    .catch((err)=>{
+        next(err);
+    })
 })
 .put((req,res,next)=>{
     //not supported because it must update spacific promotion
@@ -24,25 +40,65 @@ promotionRouter.route('/')
     res.end('PUT operation not supported on /promotions');
 })
 .delete((req,res,next)=>{
-    // but this is dangrous operation you must to authurized who do this
-    res.end('we will delete all the promotions now for you!');
+    Promotions.remove()
+    .then((resp)=>{
+        res.statusCode=200;
+        res.setHeader('Content-Type','applications/json');
+        res.json(resp);
+    },err=>{
+        next(err)
+    })
+    .catch((err)=>{
+        next(err);
+    })
 });
 
 //__________________________WITH ID
 promotionRouter.route('/:promotionId')
 .get((req,res,next)=>{
-    res.end('we will send you the details of '+ req.params.promotionId+' to you');
+    Promotions.findById(req.params.promotionId)
+    .then((promo)=>{
+        res.statusCode=200;
+        res.setHeader('Content-Type','applications/json');
+        res.json(promo);
+    },err=>{
+        next(err);
+    })
+    .catch((err)=>{
+        next(err);
+    })
 })
 .post((req,res,next)=>{
     res.statusCode =403 // means operation not supported
-    res.end('POST operation not supported on /promotions');})
+    res.end('POST operation not supported on /promotions');
+})
 .put((req,res,next)=>{
-    res.write('Updating this promotion' +req.params.promotionId + '\n');//used to print line first
-    res.end('will updating the promotion '+req.body.name+'with details '+
-    req.body.description);
+    Promotions.findByIdAndUpdate(req.params.promotionId,{
+        $set:req.body
+    },{ new : true })
+    .then((promo)=>{
+        res.statusCode=200;
+        res.setHeader('Content-Type','applications/json');
+        res.json(promo);
+    },err=>{
+        next(err);
+    })
+    .catch((err)=>{
+        next(err);
+    })
 })
 .delete((req,res,next)=>{
-    res.end('Deleting the promotion : '+req.params.promotionId);
+    Promotions.findByIdAndRemove(req.params.promotionId)
+    .then((resp)=>{
+        res.statusCode=200;
+        res.setHeader('Content-Type','applications/json');
+        res.json(resp);
+    },err=>{
+        next(err);
+    })
+    .catch((err)=>{
+        next(err);
+    })
 });
 
 module.exports =promotionRouter;
