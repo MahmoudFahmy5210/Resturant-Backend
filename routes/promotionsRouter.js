@@ -52,10 +52,10 @@ promotionRouter.route('/')
         next(err);
     })
 });
-
 //__________________________WITH ID
 promotionRouter.route('/:promotionId')
 .get((req,res,next)=>{
+
     Promotions.findById(req.params.promotionId)
     .then((promo)=>{
         res.statusCode=200;
