@@ -3,6 +3,8 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
+var session = require('express-session');
+var FileStore= require('session-file-store')(session);
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
@@ -40,12 +42,19 @@ app.set('view engine', 'jade');
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser('12345-67890-12345-67890'));//this string called the secret
+//app.use(cookieParser('12345-67890-12345-67890'));//this string called the secret
+app.use(session({
+  name:'session-id',
+  secret:'12345-67890-12345-67890',
+  saveUninitialized:false,
+  resave:false,
+  store:new FileStore()
+}));
 
 function auth(req,res,next){
   //console.log(req.headers);
   var authHeader = req.headers.authorization;
-  if(!req.signedCookies.user){//if the guest is the first time here
+  if(!req.session.user){//if the guest is the first time here
     /*now the guest is new so the property user is null
     */
     if(authHeader == null){//now check if he enter the user name and password coorect
@@ -58,8 +67,10 @@ function auth(req,res,next){
     var username = auth[0];
     var password = auth[1];
     if(username ==='admin' && password === 'password'){
+      //Save this user in the server
+      req.session.user="admin";
       //send to the browser a piece of info(cookies) about this user
-      res.cookie('user','admin',{signed:true});
+      //res.cookie('user','admin',{signed:true});
       next();//authorized
     }
     else{
@@ -70,7 +81,8 @@ function auth(req,res,next){
     }
   }
   else{//if the guest is popular for us and it's info is correct
-    if(req.signedCookies.user=='admin'){
+    if(req.session.user=='admin'){
+      console.log('req-session ' ,req.session)
       //the user property no null so open the door
       next();
     }
