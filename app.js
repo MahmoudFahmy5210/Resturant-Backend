@@ -40,29 +40,49 @@ app.set('view engine', 'jade');
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
+app.use(cookieParser('12345-67890-12345-67890'));//this string called the secret
 
 function auth(req,res,next){
-  console.log(req.headers);
+  //console.log(req.headers);
   var authHeader = req.headers.authorization;
-  if(authHeader == null){
-    var err = new Error('You are not authenticated');
-    res.setHeader('WWW-Authenticate','Basic');
-    err.status=401;
-    return next(err)//this will skip all the next middlesware and go to error handler func
+  if(!req.signedCookies.user){//if the guest is the first time here
+    /*now the guest is new so the property user is null
+    */
+    if(authHeader == null){//now check if he enter the user name and password coorect
+      var err = new Error('You are not authenticated');
+      res.setHeader('WWW-Authenticate','Basic');
+      err.status=401;
+      return next(err)//this will skip all the next middlesware and go to error handler func
+    }
+    var auth = new Buffer.from(authHeader.split(' ')[1],'base64').toString().split(':');
+    var username = auth[0];
+    var password = auth[1];
+    if(username ==='admin' && password === 'password'){
+      //send to the browser a piece of info(cookies) about this user
+      res.cookie('user','admin',{signed:true});
+      next();//authorized
+    }
+    else{
+      var err = new Error('You are not authenticated');
+      res.setHeader('WWW-Authenticate','Basic');
+      err.status=401;
+      return next(err)
+    }
   }
-  var auth = new Buffer(authHeader.split(' ')[1],'base64').toString().split(':');
-  var username = auth[0];
-  var password = auth[1];
-  if(username ==='admin' && password === 'password'){
-    next();//authorized
-  }else{
-    var err = new Error('You are not authenticated');
-    res.setHeader('WWW-Authenticate','Basic');
-    err.status=401;
-    return next(err)
-  }
+  else{//if the guest is popular for us and it's info is correct
+    if(req.signedCookies.user=='admin'){
+      //the user property no null so open the door
+      next();
+    }
+    else{
+      //if the info about the guest is not match
+      var err = new Error('You are not authenticated');
+      err.status=401;
+      return next(err)
+    }
 
+  }
+  
 }
 
 app.use(auth);
