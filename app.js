@@ -26,19 +26,16 @@ connect.then((db) =>{
 })
 
 var app = express();
-//use is an application-middleware func
-//Using app.use() means that this middleware will be called for every call to the application.
-//Mounts the specified middleware function or functions at the specified path: 
-//the middleware function is executed when the base of the requested path matches path.
-app.use('/dishes',dishRouter);
-app.use('/promotions', promoRouter);
-app.use('/leaders',leaderRouter);
+
 
 // view engine setup
 //set(name,value)
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
-
+//use is an application-middleware func
+//Using app.use() means that this middleware will be called for every call to the application.
+//Mounts the specified middleware function or functions at the specified path: 
+//the middleware function is executed when the base of the requested path matches path.
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -51,37 +48,22 @@ app.use(session({
   store:new FileStore()
 }));
 
+//users are able to ask to access the home page or the user page 
+//but if any one ask to go dishes or such that i will ask him for username and password 
+app.use('/', indexRouter);
+app.use('/users', usersRouter);//signUp and Login
+
 function auth(req,res,next){
-  //console.log(req.headers);
-  var authHeader = req.headers.authorization;
+  console.log(req.session);
+
   if(!req.session.user){//if the guest is the first time here
-    /*now the guest is new so the property user is null
-    */
-    if(authHeader == null){//now check if he enter the user name and password coorect
-      var err = new Error('You are not authenticated');
-      res.setHeader('WWW-Authenticate','Basic');
-      err.status=401;
-      return next(err)//this will skip all the next middlesware and go to error handler func
-    }
-    var auth = new Buffer.from(authHeader.split(' ')[1],'base64').toString().split(':');
-    var username = auth[0];
-    var password = auth[1];
-    if(username ==='admin' && password === 'password'){
-      //Save this user in the server
-      req.session.user="admin";
-      //send to the browser a piece of info(cookies) about this user
-      //res.cookie('user','admin',{signed:true});
-      next();//authorized
-    }
-    else{
-      var err = new Error('You are not authenticated');
-      res.setHeader('WWW-Authenticate','Basic');
-      err.status=401;
-      return next(err)
-    }
+    //now the guest is new so the property user is null
+    var err = new Error('You are not authenticated');
+    err.status=403;//forbidden
+    return next(err);//this will skip all the next middlesware and go to error handler func
   }
   else{//if the guest is popular for us and it's info is correct
-    if(req.session.user=='admin'){
+    if(req.session.user=='Authunticated'){
       console.log('req-session ' ,req.session)
       //the user property no null so open the door
       next();
@@ -89,7 +71,7 @@ function auth(req,res,next){
     else{
       //if the info about the guest is not match
       var err = new Error('You are not authenticated');
-      err.status=401;
+      err.status=403;//forbidden
       return next(err)
     }
 
@@ -101,9 +83,9 @@ app.use(auth);
 //before sending the client any static files(view html or react ..etc)
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/', indexRouter);
-app.use('/users', usersRouter);
-
+app.use('/dishes',dishRouter);
+app.use('/promotions', promoRouter);
+app.use('/leaders',leaderRouter);
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
   next(createError(404));
