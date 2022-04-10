@@ -5,6 +5,8 @@ var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var session = require('express-session');
 var FileStore= require('session-file-store')(session);
+var passport = require('passport');
+var authenticate = require('./authenticate');
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
@@ -47,36 +49,33 @@ app.use(session({
   resave:false,
   store:new FileStore()
 }));
+/** 
+ * if user logged in (visit login end point) passport authenicate.local is called then add a
+ * property called user (req.user) in the message request , then passport session automatically
+ * serialize the user by storing it's data in session
+ * and if any incoming request come agaim the user data will required from the session
+ * without new login
+ */
+app.use(passport.initialize());
+app.use(passport.session());
 
 //users are able to ask to access the home page or the user page 
 //but if any one ask to go dishes or such that i will ask him for username and password 
-app.use('/', indexRouter);
+app.use('/', indexRouter);//the main page
 app.use('/users', usersRouter);//signUp and Login
 
 function auth(req,res,next){
-  console.log(req.session);
-
-  if(!req.session.user){//if the guest is the first time here
+//if there is a property called user in the req message so 
+//the user is already authenticated
+  if(!req.user){//if the guest is the first time here
     //now the guest is new so the property user is null
     var err = new Error('You are not authenticated');
     err.status=403;//forbidden
     return next(err);//this will skip all the next middlesware and go to error handler func
   }
   else{//if the guest is popular for us and it's info is correct
-    if(req.session.user=='Authunticated'){
-      console.log('req-session ' ,req.session)
-      //the user property no null so open the door
-      next();
-    }
-    else{
-      //if the info about the guest is not match
-      var err = new Error('You are not authenticated');
-      err.status=403;//forbidden
-      return next(err)
-    }
-
+    next();
   }
-  
 }
 
 app.use(auth);
