@@ -3,6 +3,7 @@ const bodyParser= require('body-parser');
 const User =require('../models/user');
 var passport = require('passport');
 var router = express.Router();
+var authenicate=require('../authenticate');
 router.use(bodyParser.json());
 
 /* GET users listing. */
@@ -17,7 +18,7 @@ router.post('/signup' , (req,res,next)=>{
   req.body.password,(err,user)=>{
     if(err){
       //in case of error
-      err.status = 500; //unexpected error prevent complete the request
+      err.statusCode = 500; //unexpected error prevent complete the request
       res.setHeader('Content-Type','apolication/json');
       res.json({err :err});
     }
@@ -36,9 +37,12 @@ router.post('/signup' , (req,res,next)=>{
 });
 
 router.post('/login' ,passport.authenticate('local') , (req,res)=>{
+  //after signed in create the token
+  var token = authenicate.getToken({_id:req.user._id});
   res.statusCode = 200;
   res.setHeader('Content-Type','apolication/json');
-  res.json({success:true , Status:'Login succuessfully'});
+  //pass the token to the reply message to the client
+  res.json({success:true ,token: token , Status:'Login succuessfully'});
 });
 router.get('/logout', (req, res) => {
   if (req.session) {

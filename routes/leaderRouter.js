@@ -4,6 +4,7 @@ const leaderRouter = express.Router();
 
 const Leaders = require('../models/leaders');
 const mongoose = require('mongoose');
+var authenicate=require('../authenticate');
 
 leaderRouter.use(bodyParser.json());
 
@@ -21,7 +22,7 @@ leaderRouter.route('/')
         next(err);
     })
 })
-.post((req,res,next)=>{
+.post(authenicate.verifyUser,(req,res,next)=>{
     Leaders.create(req.body)
     .then((leader)=>{
         res.statusCode=200;

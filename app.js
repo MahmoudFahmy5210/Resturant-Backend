@@ -7,10 +7,10 @@ var session = require('express-session');
 var FileStore= require('session-file-store')(session);
 var passport = require('passport');
 var authenticate = require('./authenticate');
-
+//____________________________________
+var config = require('./config');
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
-//____________________________________
 var dishRouter = require('./routes/dishRouter');
 var promoRouter = require('./routes/promotionsRouter');
 var leaderRouter = require('./routes/leaderRouter');
@@ -18,7 +18,7 @@ var leaderRouter = require('./routes/leaderRouter');
 //connecting to database mongoose
 const mongoose = require('mongoose');
 const Dishes = require('./models/dishes');
-const url = 'mongodb://localhost:27017/conFusion';
+const url = config.mongoUrl;//more organized code
 const connect = mongoose.connect(url);
 
 connect.then((db) =>{
@@ -42,43 +42,19 @@ app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 //app.use(cookieParser('12345-67890-12345-67890'));//this string called the secret
-app.use(session({
-  name:'session-id',
-  secret:'12345-67890-12345-67890',
-  saveUninitialized:false,
-  resave:false,
-  store:new FileStore()
-}));
-/** 
- * if user logged in (visit login end point) passport authenicate.local is called then add a
- * property called user (req.user) in the message request , then passport session automatically
- * serialize the user by storing it's data in session
- * and if any incoming request come agaim the user data will required from the session
- * without new login
- */
+
+//when this called ?? called passport.authenticate whenever the code
 app.use(passport.initialize());
-app.use(passport.session());
+
 
 //users are able to ask to access the home page or the user page 
 //but if any one ask to go dishes or such that i will ask him for username and password 
 app.use('/', indexRouter);//the main page
 app.use('/users', usersRouter);//signUp and Login
 
-function auth(req,res,next){
-//if there is a property called user in the req message so 
-//the user is already authenticated
-  if(!req.user){//if the guest is the first time here
-    //now the guest is new so the property user is null
-    var err = new Error('You are not authenticated');
-    err.status=403;//forbidden
-    return next(err);//this will skip all the next middlesware and go to error handler func
-  }
-  else{//if the guest is popular for us and it's info is correct
-    next();
-  }
-}
 
-app.use(auth);
+
+
 //before sending the client any static files(view html or react ..etc)
 app.use(express.static(path.join(__dirname, 'public')));
 
