@@ -23,17 +23,27 @@ router.post('/signup' , (req,res,next)=>{
       res.json({err :err});
     }
     else{
+      if(req.body.firstname)
+        user.firstname=req.body.firstname;
+      if(req.body.lastname)
+      user.lastname=req.body.lastname;
       //in case regestration done
       //passport.authenticate(type of the strategy)
-      passport.authenticate('local')(req,res,()=>{
-        res.statusCode = 200;
-        res.setHeader('Content-Type','apolication/json');
-        res.json({success:true , Status:'Regestration succuessfull'});//send to the client
-
+      user.save((err,user)=>{
+        if(err){
+          err.statusCode = 500; //unexpected error prevent complete the request
+          res.setHeader('Content-Type','apolication/json');
+          res.json({err :err});
+          return ;
+        }
+        passport.authenticate('local')(req,res,()=>{
+          res.statusCode = 200;
+          res.setHeader('Content-Type','apolication/json');
+          res.json({success:true , Status:'Regestration succuessfull'});//send to the client
+        });
       });
     }
   });
-  
 });
 
 router.post('/login' ,passport.authenticate('local') , (req,res)=>{

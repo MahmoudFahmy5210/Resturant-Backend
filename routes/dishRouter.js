@@ -11,7 +11,8 @@ dishRouter.use(bodyParser.json());
 dishRouter.route('/')
 .get((req,res,next)=>{
     //get for me all dishes
-    Dishes.find({})//return promise with all dishes
+    Dishes.find({})
+    .populate('comments.author')//get from user model to dishes
     .then((dishes)=>{
         res.statusCode=200 //say all are good
         res.setHeader('Content-Type','application/json');//since we work on json
@@ -52,6 +53,7 @@ dishRouter.route('/')
 dishRouter.route('/:dishId')
 .get((req,res,next)=>{
     Dishes.findById(req.params.dishId)
+    .populate('comments.author')
     .then((dish)=>{
         console.log('Dish created =',dish);
         res.statusCode=200 //say all are good
@@ -91,6 +93,7 @@ dishRouter.route('/:dishId/comments')
 .get((req,res,next)=>{
     //get for me all dishes
     Dishes.findById(req.params.dishId)
+    .populate('comments.author')
     .then((dish)=>{
         if(dish != null){
             res.statusCode=200 //say all are good
@@ -110,12 +113,19 @@ dishRouter.route('/:dishId/comments')
     Dishes.findById(req.params.dishId)
     .then((dish)=>{
         if(dish != null){
+//since we use verify user , passport-jwt will include user property in the req message so we can get the id
+            req.body.author=req.user._id;
             dish.comments.push(req.body);
             dish.save()
             .then((dish)=>{
-                res.statusCode=200 //say all are good
-                res.setHeader('Content-Type','application/json');//since we work on json
-                res.json(dish.comments);
+                Dishes.findById(dish._id)
+                .populate('comments.author')
+                .then((dish)=>{
+                    res.statusCode=200 //say all are good
+                    res.setHeader('Content-Type','application/json');//since we work on json
+                    res.json(dish.comments);   //or dish only 
+                })
+                
             },(err)=>next(err))
             
         }
@@ -163,6 +173,7 @@ dishRouter.route('/:dishId/comments')
 dishRouter.route('/:dishId/comments/:commentId')
 .get((req,res,next)=>{
     Dishes.findById(req.params.dishId)
+    .populate('comments.author')
     .then((dish)=>{
         if(dish != null && dish.comments.id(req.params.commentId) !=null){
             res.statusCode=200 //say all are good
@@ -200,9 +211,14 @@ dishRouter.route('/:dishId/comments/:commentId')
             }
             dish.save()
             then((dish)=>{
-                res.statusCode=200 //say all are good
-                res.setHeader('Content-Type','application/json');//since we work on json
-                res.json(dish);
+//we search every time to show/populate author
+                Dishes.findById(dish._id)
+                .populate('comments.author')
+                .then((dish)=>{
+                    res.statusCode=200 //say all are good
+                    res.setHeader('Content-Type','application/json');//since we work on json
+                    res.json(dish);
+                })
             })
             
         }
@@ -229,9 +245,13 @@ dishRouter.route('/:dishId/comments/:commentId')
             //dish.comments[i]._id.remove();
             dish.save()
             .then((dish)=>{
-                res.statusCode=200 //say all are good
-                res.setHeader('Content-Type','application/json');//since we work on json
-                res.json(dish);
+                Dishes.findById(dish._id)
+                .populate('comments.author')
+                .then((dish)=>{
+                    res.statusCode=200 //say all are good
+                    res.setHeader('Content-Type','application/json');//since we work on json
+                    res.json(dish);
+                })
             },(err)=>next(err))
         }
         else if(dish == null){
