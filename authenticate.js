@@ -51,3 +51,14 @@ exports.jwtPassport = passport.use(new JwtStrategy(opts,
 //exports make the property avalible when import in another file
 //you have to set session to be false because if not , passport auth will try to use it
 exports.verifyUser=passport.authenticate('jwt',{session:false});  
+exports.verfiyAdmin= function(req,res,next){
+    if(req.user.admin){
+        //console.log("req.user.admin =>",req.user.admin);
+        next();       
+    }
+    else{
+        var err = new Error('You are not authorized to do these operation !');
+        err.status=403;
+        return next(err);
+    }
+};

@@ -22,8 +22,9 @@ dishRouter.route('/')
     },(err)=>next(err))
     .catch((err)=>next(err)) // here we collect error to the overall error of the requeses
 })
-//verify user before do any thing 
-.post(authenicate.verifyUser,(req,res,next)=>{
+//verify user before do any thing , then verify admin , it must pass the two verification 
+//else it will send back error 
+.post(authenicate.verifyUser , authenicate.verfiyAdmin,(req,res,next)=>{
     //req.body is came from body parser which parse the incoming request only the json part in the body
     Dishes.create(req.body)//return dish promise
     .then((dish)=>{
@@ -34,7 +35,7 @@ dishRouter.route('/')
     },(err)=>next(err))
     .catch((err)=>next(err))
 })
-.put(authenicate.verifyUser,(req,res,next)=>{
+.put(authenicate.verifyUser,authenicate.verfiyAdmin,(req,res,next)=>{
     //not supported because it must update spacific dish
     res.statusCode =403 // means operation not supported
     res.end('PUT operation not supported on /dishes');
@@ -63,10 +64,10 @@ dishRouter.route('/:dishId')
     .catch((err)=>next(err))
      
 })
-.post( authenicate.verifyUser, (req,res,next)=>{
+.post( authenicate.verifyUser,authenicate.verfiyAdmin, (req,res,next)=>{
     res.statusCode =403 // means operation not supported
     res.end('POST operation not supported on /dishes');})
-.put((req,res,next)=>{
+.put( authenicate.verifyUser,authenicate.verfiyAdmin , (req,res,next)=>{
     Dishes.findByIdAndUpdate(req.params.dishId,{
         $set:req.body
     },{ new : true })
@@ -78,7 +79,7 @@ dishRouter.route('/:dishId')
     },(err)=>next(err))
     .catch((err)=>next(err))
 })
-.delete( authenicate.verifyUser ,(req,res,next)=>{
+.delete( authenicate.verifyUser ,authenicate.verfiyAdmin,(req,res,next)=>{
     Dishes.findByIdAndRemove(req.params.dishId)
     .then((resp)=>{
         //console.log('Dish created =',dish);
@@ -89,9 +90,10 @@ dishRouter.route('/:dishId')
     .catch((err)=>next(err))
 });
 //_____________________________________________comments
+
 dishRouter.route('/:dishId/comments')
-.get((req,res,next)=>{
-    //get for me all dishes
+.get(authenicate.verifyUser,(req,res,next)=>{
+     //get for me all dishes comment , available for only users
     Dishes.findById(req.params.dishId)
     .populate('comments.author')
     .then((dish)=>{
@@ -109,12 +111,17 @@ dishRouter.route('/:dishId/comments')
     },(err)=>next(err))
     .catch((err)=>next(err)) // here we collect error to the overall error of the requeses
 })
-.post( authenicate.verifyUser,(req,res,next)=>{
+.post(authenicate.verifyUser,(req,res,next)=>{
     Dishes.findById(req.params.dishId)
     .then((dish)=>{
         if(dish != null){
 //since we use verify user , passport-jwt will include user property in the req message so we can get the id
-            req.body.author=req.user._id;
+           // console.log('Post comments , request',req.user);
+            //console.log('request.body before author ', req.body);
+
+            req.body.author=req.user._id;//it will add property called user for req.body
+            //console.log('request.body after', req.body);
+            //console.log('request.body.author', req.body.author);
             dish.comments.push(req.body);
             dish.save()
             .then((dish)=>{
@@ -143,7 +150,7 @@ dishRouter.route('/:dishId/comments')
     res.statusCode =403 // means operation not supported
     res.end('PUT operation not supported on /dishes'+req.params.dishId+'/comments');
 })
-.delete( authenicate.verifyUser,(req,res,next)=>{
+.delete( authenicate.verifyUser,authenicate.verfiyAdmin,(req,res,next)=>{
     Dishes.findById(req.params.dishId)
     .then((dish)=>{
         if(dish != null){
@@ -171,7 +178,7 @@ dishRouter.route('/:dishId/comments')
 
 //__________________________WITH ID
 dishRouter.route('/:dishId/comments/:commentId')
-.get((req,res,next)=>{
+.get(authenicate.verifyUser,(req,res,next)=>{
     Dishes.findById(req.params.dishId)
     .populate('comments.author')
     .then((dish)=>{
@@ -201,16 +208,17 @@ dishRouter.route('/:dishId/comments/:commentId')
 .put( authenicate.verifyUser,(req,res,next)=>{
     Dishes.findById(req.params.dishId)
     .then((dish)=>{
-        if(dish != null && dish.comments.id(req.params.commentId) !=null){
+        if(dish != null && dish.comments.id(req.params.commentId) !=null && dish.comments.id(req.params.commentId).author.equals(req.user._id) )
+        {
             if(req.body.rating){
                 //because there is no spacific func to handle these
-                dish.comment.id(req.params.commentId).rating=req.body.rating;
+                dish.comments.id(req.params.commentId).rating=req.body.rating;
             }
             if(req.body.comment){
-                dish.comment.id(req.params.commentId).comment=req.body.comment;
+                dish.comments.id(req.params.commentId).comment=req.body.comment;
             }
             dish.save()
-            then((dish)=>{
+            .then((dish)=>{
 //we search every time to show/populate author
                 Dishes.findById(dish._id)
                 .populate('comments.author')
@@ -228,8 +236,13 @@ dishRouter.route('/:dishId/comments/:commentId')
             err.status=404;
             return next(err);
         }
+        else if(!dish.comments.id(req.params.commentId).author.equals(req.user._id)){
+            err = new Error('you are not authorized to edit this comment');
+            err.status=401;
+            return next(err);
+        }
         else{
-            err = new Error('The comment'+ req.params.commentId+'is not found');
+            err = new Error('The comment '+ req.params.commentId+'is not found');
             err.status=404; 
             return next(err);
         }
@@ -239,7 +252,7 @@ dishRouter.route('/:dishId/comments/:commentId')
 .delete( authenicate.verifyUser, (req,res,next)=>{
     Dishes.findById(req.params.dishId)
     .then((dish)=>{
-        if(dish != null && dish.comments.id(req.params.commentId) !=null)
+        if(dish != null && dish.comments.id(req.params.commentId) !=null && dish.comments.id(req.params.commentId).author.equals(req.user._id))
         {
             dish.comments.id(req.params.commentId).remove();
             //dish.comments[i]._id.remove();
@@ -258,6 +271,11 @@ dishRouter.route('/:dishId/comments/:commentId')
             //this will return the error for the error handling message which in app.js 
             err = new Error('The dish'+ req.params.dishId+'is not found');
             err.status=404;
+            return next(err);
+        }
+        else if(!dish.comments.id(req.params.commentId).author.equals(req.user._id)){
+            err = new Error('you are not authorized to delete this comment');
+            err.status=401;
             return next(err);
         }
         else{

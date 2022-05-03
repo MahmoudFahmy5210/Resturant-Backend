@@ -22,7 +22,7 @@ leaderRouter.route('/')
         next(err);
     })
 })
-.post(authenicate.verifyUser,(req,res,next)=>{
+.post(authenicate.verifyUser,authenicate.verfiyAdmin,(req,res,next)=>{
     Leaders.create(req.body)
     .then((leader)=>{
         res.statusCode=200;
@@ -36,12 +36,12 @@ leaderRouter.route('/')
     })
 })
 
-.put((req,res,next)=>{
+.put(authenicate.verifyUser,authenicate.verfiyAdmin,(req,res,next)=>{
     //not supported because it must update spacific leader
     res.statusCode =403 // means operation not supported
     res.end('PUT operation not supported on /leaderes');
 })
-.delete((req,res,next)=>{
+.delete(authenicate.verifyUser,authenicate.verfiyAdmin,(req,res,next)=>{
     Leaders.remove()
     .then((resp)=>{
         res.statusCode=200;
@@ -78,12 +78,12 @@ leaderRouter.route('/:leaderId')
     })
 
 })
-.post((req,res,next)=>{
+.post(authenicate.verifyUser,authenicate.verfiyAdmin,(req,res,next)=>{
     res.statusCode =403 // means operation not supported
     res.end('POST operation not supported on /leaderes');
 })
 
-.put((req,res,next)=>{
+.put(authenicate.verifyUser,authenicate.verfiyAdmin,(req,res,next)=>{
     Leaders.findByIdAndUpdate(req.params.leaderId,{
         $set :req.body
     },  {new:true})
@@ -98,7 +98,7 @@ leaderRouter.route('/:leaderId')
         next(err);
     })  
 })
-.delete((req,res,next)=>{
+.delete(authenicate.verifyUser,authenicate.verfiyAdmin,(req,res,next)=>{
     Leaders.findByIdAndRemove(req.params.leaderId)
     .then((resp)=>{
         res.statusCode=200 //say all are good

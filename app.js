@@ -28,6 +28,16 @@ connect.then((db) =>{
 })
 
 var app = express();
+// * means any incoming request
+// Secure traffic only
+app.all('*', (req, res, next) => {
+  if (req.secure) {
+    return next();
+  }
+  else {
+    res.redirect(307, 'https://' + req.hostname + ':' + app.get('secPort') + req.url);//307 is status code
+  }
+});
 
 
 // view engine setup
