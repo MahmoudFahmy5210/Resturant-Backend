@@ -4,7 +4,7 @@ const leaderRouter = express.Router();
 
 const Leaders = require('../models/leaders');
 const mongoose = require('mongoose');
-var authenicate=require('../authenticate');
+var authenticate=require('../authenticate');
 
 leaderRouter.use(bodyParser.json());
 
@@ -22,7 +22,7 @@ leaderRouter.route('/')
         next(err);
     })
 })
-.post(authenicate.verifyUser,authenicate.verfiyAdmin,(req,res,next)=>{
+.post(authenticate.verifyUser,authenticate.verfiyAdmin,(req,res,next)=>{
     Leaders.create(req.body)
     .then((leader)=>{
         res.statusCode=200;
@@ -36,12 +36,12 @@ leaderRouter.route('/')
     })
 })
 
-.put(authenicate.verifyUser,authenicate.verfiyAdmin,(req,res,next)=>{
+.put(authenticate.verifyUser,authenticate.verfiyAdmin,(req,res,next)=>{
     //not supported because it must update spacific leader
     res.statusCode =403 // means operation not supported
     res.end('PUT operation not supported on /leaderes');
 })
-.delete(authenicate.verifyUser,authenicate.verfiyAdmin,(req,res,next)=>{
+.delete(authenticate.verifyUser,authenticate.verfiyAdmin,(req,res,next)=>{
     Leaders.remove()
     .then((resp)=>{
         res.statusCode=200;
@@ -78,12 +78,12 @@ leaderRouter.route('/:leaderId')
     })
 
 })
-.post(authenicate.verifyUser,authenicate.verfiyAdmin,(req,res,next)=>{
+.post(authenticate.verifyUser,authenticate.verfiyAdmin,(req,res,next)=>{
     res.statusCode =403 // means operation not supported
     res.end('POST operation not supported on /leaderes');
 })
 
-.put(authenicate.verifyUser,authenicate.verfiyAdmin,(req,res,next)=>{
+.put(authenticate.verifyUser,authenticate.verfiyAdmin,(req,res,next)=>{
     Leaders.findByIdAndUpdate(req.params.leaderId,{
         $set :req.body
     },  {new:true})
@@ -98,7 +98,7 @@ leaderRouter.route('/:leaderId')
         next(err);
     })  
 })
-.delete(authenicate.verifyUser,authenicate.verfiyAdmin,(req,res,next)=>{
+.delete(authenticate.verifyUser,authenticate.verfiyAdmin,(req,res,next)=>{
     Leaders.findByIdAndRemove(req.params.leaderId)
     .then((resp)=>{
         res.statusCode=200 //say all are good

@@ -3,11 +3,11 @@ const bodyParser= require('body-parser');
 const User =require('../models/user');
 var passport = require('passport');
 var router = express.Router();
-var authenicate=require('../authenticate');
+var authenticate=require('../authenticate');
 router.use(bodyParser.json());
 
 /* GET users listing. */
-router.get('/',authenicate.verifyUser,authenicate.verfiyAdmin, function(req, res, next) {
+router.get('/',authenticate.verifyUser,authenticate.verfiyAdmin, function(req, res, next) {
   User.find({})
   .then((users)=>{
     res.statusCode=200;
@@ -55,7 +55,7 @@ router.post('/signup' , (req,res,next)=>{
 
 router.post('/login' ,passport.authenticate('local') , (req,res)=>{
   //after signed in create the token
-  var token = authenicate.getToken({_id:req.user._id});
+  var token = authenticate.getToken({_id:req.user._id});
   res.statusCode = 200;
   res.setHeader('Content-Type','apolication/json');
   //pass the token to the reply message to the client
