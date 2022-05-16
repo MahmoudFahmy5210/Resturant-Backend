@@ -1,6 +1,8 @@
 const express = require('express');
 const bodyParser=require('body-parser');
 const leaderRouter = express.Router();
+const cors = require('./cors');
+
 
 const Leaders = require('../models/leaders');
 const mongoose = require('mongoose');
@@ -9,7 +11,8 @@ var authenticate=require('../authenticate');
 leaderRouter.use(bodyParser.json());
 
 leaderRouter.route('/')
-.get((req,res,next)=>{
+.options(cors.corsWithOptions,(req,res)=>{res.sendStatus(200);})
+.get(cors.cors,(req,res,next)=>{
     Leaders.find({})
     .then((leaders)=>{
         res.statusCode = 200;
@@ -22,7 +25,7 @@ leaderRouter.route('/')
         next(err);
     })
 })
-.post(authenticate.verifyUser,authenticate.verfiyAdmin,(req,res,next)=>{
+.post(cors.corsWithOptions,authenticate.verifyUser,authenticate.verfiyAdmin,(req,res,next)=>{
     Leaders.create(req.body)
     .then((leader)=>{
         res.statusCode=200;
@@ -36,12 +39,12 @@ leaderRouter.route('/')
     })
 })
 
-.put(authenticate.verifyUser,authenticate.verfiyAdmin,(req,res,next)=>{
+.put(cors.corsWithOptions,authenticate.verifyUser,authenticate.verfiyAdmin,(req,res,next)=>{
     //not supported because it must update spacific leader
     res.statusCode =403 // means operation not supported
     res.end('PUT operation not supported on /leaderes');
 })
-.delete(authenticate.verifyUser,authenticate.verfiyAdmin,(req,res,next)=>{
+.delete(cors.corsWithOptions,authenticate.verifyUser,authenticate.verfiyAdmin,(req,res,next)=>{
     Leaders.remove()
     .then((resp)=>{
         res.statusCode=200;
@@ -57,7 +60,7 @@ leaderRouter.route('/')
 
 //__________________________WITH ID
 leaderRouter.route('/:leaderId')
-.get((req,res,next)=>{
+.get(cors.cors,(req,res,next)=>{
     Leaders.findById(req.params.leaderId)
     .then((leader)=>{
         if(leader != null){
@@ -78,12 +81,12 @@ leaderRouter.route('/:leaderId')
     })
 
 })
-.post(authenticate.verifyUser,authenticate.verfiyAdmin,(req,res,next)=>{
+.post(cors.corsWithOptions,authenticate.verifyUser,authenticate.verfiyAdmin,(req,res,next)=>{
     res.statusCode =403 // means operation not supported
     res.end('POST operation not supported on /leaderes');
 })
 
-.put(authenticate.verifyUser,authenticate.verfiyAdmin,(req,res,next)=>{
+.put(cors.corsWithOptions,authenticate.verifyUser,authenticate.verfiyAdmin,(req,res,next)=>{
     Leaders.findByIdAndUpdate(req.params.leaderId,{
         $set :req.body
     },  {new:true})
@@ -98,7 +101,7 @@ leaderRouter.route('/:leaderId')
         next(err);
     })  
 })
-.delete(authenticate.verifyUser,authenticate.verfiyAdmin,(req,res,next)=>{
+.delete(cors.corsWithOptions,authenticate.verifyUser,authenticate.verfiyAdmin,(req,res,next)=>{
     Leaders.findByIdAndRemove(req.params.leaderId)
     .then((resp)=>{
         res.statusCode=200 //say all are good

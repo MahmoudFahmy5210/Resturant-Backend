@@ -4,10 +4,12 @@ const User =require('../models/user');
 var passport = require('passport');
 var router = express.Router();
 var authenticate=require('../authenticate');
+const cors = require('./cors');
+
 router.use(bodyParser.json());
 
 /* GET users listing. */
-router.get('/',authenticate.verifyUser,authenticate.verfiyAdmin, function(req, res, next) {
+router.get('/',cors.corsWithOptions,authenticate.verifyUser,authenticate.verfiyAdmin, function(req, res, next) {
   User.find({})
   .then((users)=>{
     res.statusCode=200;
@@ -18,7 +20,7 @@ router.get('/',authenticate.verifyUser,authenticate.verfiyAdmin, function(req, r
 
 });
 
-router.post('/signup' , (req,res,next)=>{
+router.post('/signup', cors.corsWithOptions, (req,res,next)=>{
   //register is from passport-local-mongoose
   //take 3 argument (new user uername , password , callback)
   User.register( new User({username:req.body.username}),
@@ -53,7 +55,7 @@ router.post('/signup' , (req,res,next)=>{
   });
 });
 
-router.post('/login' ,passport.authenticate('local') , (req,res)=>{
+router.post('/login' ,cors.corsWithOptions,passport.authenticate('local') , (req,res)=>{
   //after signed in create the token
   var token = authenticate.getToken({_id:req.user._id});
   res.statusCode = 200;

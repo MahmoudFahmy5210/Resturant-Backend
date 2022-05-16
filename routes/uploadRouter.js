@@ -2,6 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const authenticate = require('../authenticate');
 const multer = require('multer');
+const cors = require('./cors');
 
 const storage = multer.diskStorage(
     {
@@ -27,12 +28,13 @@ const uploadRouter =express.Router();
 uploadRouter.use(bodyParser.json());
 
 uploadRouter.route('/')
-.get((req,res,next)=>{
+.options(cors.corsWithOptions,(req,res)=>{res.sendStatus(200);})
+.get(cors.cors,(req,res,next)=>{
         res.statusCode=403 //not found
         res.end("GET operation is not allowed for /imageUpload");
     }
 )  
-.post(authenticate.verifyUser , authenticate.verfiyAdmin,
+.post(cors.corsWithOptions,authenticate.verifyUser , authenticate.verfiyAdmin,
     upload.single('imageFile'),
     (req,res)=>{
         res.statusCode=200 //say all are good
@@ -40,13 +42,13 @@ uploadRouter.route('/')
         res.json(req.file);//contain the file path
     }
 )
-.put(authenticate.verifyUser,authenticate.verfiyAdmin,
+.put(cors.corsWithOptions,authenticate.verifyUser,authenticate.verfiyAdmin,
     (req,res,next)=>{
     //not supported because it must update spacific dish
     res.statusCode =403 // means operation not supported
     res.end('PUT operation not supported on /imageUpload');
 })
-.delete(authenticate.verifyUser,(req,res,next)=>{
+.delete(cors.corsWithOptions,authenticate.verifyUser,(req,res,next)=>{
     res.statusCode =403 // means operation not supported
     res.end('DELETE operation not supported on /imageUpload');
     }

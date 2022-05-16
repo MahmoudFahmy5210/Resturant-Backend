@@ -1,6 +1,7 @@
 const express = require('express');
 const bodyParser=require('body-parser');
 const promotionRouter = express.Router();
+const cors = require('./cors');
 const mongoose=require('mongoose');
 const Promotions=require('../models/promotions');
 var authenticate=require('../authenticate');
@@ -8,7 +9,8 @@ var authenticate=require('../authenticate');
 promotionRouter.use(bodyParser.json());
 
 promotionRouter.route('/')
-.get((req,res,next)=>{
+.options(cors.corsWithOptions,(req,res)=>{res.sendStatus(200);})
+.get(cors.cors,(req,res,next)=>{
     Promotions.find({})
     .then((promotions)=>
     {
@@ -22,7 +24,7 @@ promotionRouter.route('/')
         next(err);
     })
 })
-.post(authenticate.verifyUser,authenticate.verfiyAdmin,(req,res,next)=>{
+.post(cors.corsWithOptions,authenticate.verifyUser,authenticate.verfiyAdmin,(req,res,next)=>{
     Promotions.create(req.body)
     .then((promo)=>{
         res.statusCode=200;
@@ -35,12 +37,12 @@ promotionRouter.route('/')
         next(err);
     })
 })
-.put( authenticate.verifyUser,authenticate.verfiyAdmin, (req,res,next)=>{
+.put( cors.corsWithOptions,authenticate.verifyUser,authenticate.verfiyAdmin, (req,res,next)=>{
     //not supported because it must update spacific promotion
     res.statusCode =403 // means operation not supported
     res.end('PUT operation not supported on /promotions');
 })
-.delete( authenticate.verifyUser,authenticate.verfiyAdmin, (req,res,next)=>{
+.delete( cors.corsWithOptions,authenticate.verifyUser,authenticate.verfiyAdmin, (req,res,next)=>{
     Promotions.remove()
     .then((resp)=>{
         res.statusCode=200;
@@ -55,7 +57,7 @@ promotionRouter.route('/')
 });
 //__________________________WITH ID
 promotionRouter.route('/:promotionId')
-.get((req,res,next)=>{
+.get(cors.cors,(req,res,next)=>{
 
     Promotions.findById(req.params.promotionId)
     .then((promo)=>{
@@ -69,11 +71,11 @@ promotionRouter.route('/:promotionId')
         next(err);
     })
 })
-.post(authenticate.verifyUser,authenticate.verfiyAdmin, (req,res,next)=>{
+.post(cors.corsWithOptions,authenticate.verifyUser,authenticate.verfiyAdmin, (req,res,next)=>{
     res.statusCode =403 // means operation not supported
     res.end('POST operation not supported on /promotions');
 })
-.put(authenticate.verifyUser,authenticate.verfiyAdmin,(req,res,next)=>{
+.put(cors.corsWithOptions,authenticate.verifyUser,authenticate.verfiyAdmin,(req,res,next)=>{
     Promotions.findByIdAndUpdate(req.params.promotionId,{
         $set:req.body
     },{ new : true })
@@ -88,7 +90,7 @@ promotionRouter.route('/:promotionId')
         next(err);
     })
 })
-.delete( authenticate.verifyUser,authenticate.verfiyAdmin, (req,res,next)=>{
+.delete(cors.corsWithOptions, authenticate.verifyUser,authenticate.verfiyAdmin, (req,res,next)=>{
     Promotions.findByIdAndRemove(req.params.promotionId)
     .then((resp)=>{
         res.statusCode=200;
