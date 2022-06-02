@@ -75,5 +75,17 @@ router.get('/logout', (req, res) => {
     next(err);
   }
 });
+//if we call passport.authenticate('facebook-token') then it will load user for the request
+router.get('/facebook/token',passport.authenticate('facebook-token'),
+  (req,res)=>{
+    if(req.user){
+      //generate the token using req.user._id and store in token variable
+      var token = authenticate.getToken({_id:req.user._id});
+      res.statusCode = 200;
+      res.setHeader('Content-Type','apolication/json');
+      //pass the token to the reply message to the client
+      res.json({success:true ,token: token , Status:'Login succuessfully With Facebook'});
+    }
+})
 module.exports = router;
 

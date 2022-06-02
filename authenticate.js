@@ -5,6 +5,7 @@ var User = require('./models/user');
 var JwtStrategy = require('passport-jwt').Strategy;
 var JwtExtract = require('passport-jwt').ExtractJwt;
 var Jwt = require('jsonwebtoken');//used to create,sign,and verify token
+var FacebookTokenStrategy = require('passport-facebook-token'); 
 var config = require('./config'); 
 const { ExtractJwt, Strategy } = require('passport-jwt');
 
@@ -62,3 +63,39 @@ exports.verfiyAdmin= function(req,res,next){
         return next(err);
     }
 };
+exports.facbookPassport = passport.use(new 
+    FacebookTokenStrategy(
+        {
+            clientID:config.facebook.cliendId,
+            clientSecret:config.facebook.clientSecret
+        },
+        (accessToken , refreshToken , profile , done)=>{
+            //check if this user login with facebook before
+            User.findOne({facebookId:profile.id},
+            (err,user)=>
+            {
+                if(err){
+                    return done(err,false)
+                }
+                if(!err && user!=null){
+                    return done(null , user)
+                }
+                else{
+                //if the user does't exist
+                    user = new User({username:profile.displayName});
+                    user.facebookId=profile.id;
+                    user.firstname=profile.name.givenName;
+                    user.lastname=profile.name.familyName;
+                    user.save((err,user)=>{
+                        if(err){
+                            return done(err,false)
+                        }
+                        else{
+                            return done(null , user);
+                        }
+                    })
+                }
+            })
+
+        }
+))
