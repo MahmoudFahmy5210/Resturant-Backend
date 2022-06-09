@@ -13,6 +13,7 @@ const User = new Schema({
         defulat:''
     },
     facebookId:String,
+    
     admin:{
         type:Boolean,
         default:false 
