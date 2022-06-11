@@ -3,7 +3,9 @@
     const app = express();
 
     //these will contain all the willing request which will be allowed.
-    const willingList = ['http://localhost:3000','https://localhost:3433'];
+/*adding my computer name , so if the incoming request to our server from our location it
+will be allowed  */
+    const willingList = ['http://localhost:3000','https://localhost:3433','http://Mahmoud-Samir:3001'];
      
 /* these func check if the incoming request contain the willing list origin , 
 if it's so reply with acesses-control-allow-origin with the origin set in the request header

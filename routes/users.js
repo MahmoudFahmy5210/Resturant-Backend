@@ -8,6 +8,10 @@ const cors = require('./cors');
 
 router.use(bodyParser.json());
 
+//for all end point under user
+router.all('*',cors.corsWithOptions,(req,res)=>{
+  res.sendStatus(200);
+})
 /* GET users listing. */
 router.get('/',cors.corsWithOptions,authenticate.verifyUser,authenticate.verfiyAdmin, function(req, res, next) {
   User.find({})
@@ -54,14 +58,37 @@ router.post('/signup', cors.corsWithOptions, (req,res,next)=>{
     }
   });
 });
-
-router.post('/login' ,cors.corsWithOptions,passport.authenticate('local') , (req,res)=>{
-  //after signed in create the token
-  var token = authenticate.getToken({_id:req.user._id});
-  res.statusCode = 200;
-  res.setHeader('Content-Type','apolication/json');
-  //pass the token to the reply message to the client
-  res.json({success:true ,token: token , Status:'Login succuessfully'});
+//we will modify these to return a meaningful message for the user
+router.post('/login' ,cors.corsWithOptions, (req,res,next)=>{
+  //info is more information about the returned value when it's user
+  passport.authenticate('local',(err,user,info)=>{
+    //if there is error for any reson happen
+    if(err)
+      return next(err)
+    //if the user doesn't exist (null) means not authenicated
+    //the info will carry the information about what happen and why there no user
+    if(!user){
+      res.statusCode = 401;
+      res.setHeader('Content-Type','apolication/json');
+      res.json({success:false , Status:'Login unsuccuessfull' ,err:info});
+    }
+    //if we reach this point so the user is authenticated and add this method(login)
+    // for the request message
+    req.logIn( user, (err)=>
+    {
+      if(err)
+      {
+        res.statusCode = 401;
+        res.setHeader('Content-Type','apolication/json');
+        res.json({success:false , Status:'Login unsuccuessfull' ,err:"could not login User !"});
+      }
+    //after signed in create the token
+      var token = authenticate.getToken({_id:req.user._id});
+      res.statusCode = 200;
+      res.setHeader('Content-Type','apolication/json');
+      res.json({success:true ,token:token, Status:'Login succuessfully'});
+    });
+  })(req,res,next);//this is her style in writing 
 });
 router.get('/logout', (req, res) => {
   if (req.session) {
@@ -86,6 +113,25 @@ router.get('/facebook/token',passport.authenticate('facebook-token'),
       //pass the token to the reply message to the client
       res.json({success:true ,token: token , Status:'Login succuessfully With Facebook'});
     }
+})
+//to verify the expire time of the token
+router.get('/checkJWTToken',cors.corsWithOptions,(req,res,next)=>{
+    passport.authenticate('jwt',{session:false},(err,user,info)=>{
+      if(err){
+        return next(err);
+      }
+      else if(!user){//not a user
+        res.statusCode = 401;//unautherized
+        res.setHeader('Content-Type','apolication/json');
+        return res.json({success:false  , Status:'JWT invalid!', err:info});
+      }
+      else{
+        res.statusCode = 200;
+        res.setHeader('Content-Type','apolication/json');
+        //pass the token to the reply message to the client
+        return res.json({success:true , Status:'JWT valid',user:uer});
+      }
+    })(req,res,next);
 })
 module.exports = router;
 
